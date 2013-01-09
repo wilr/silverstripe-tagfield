@@ -1,0 +1,14 @@
+language: php 
+php: 
+ - 5.3
+
+env:
+ - TESTDB=MYSQL
+
+before_script:
+ - phpenv rehash
+ - ./tests/travis/before_script ~/builds/ss 
+ - cd ~/builds/ss
+
+script: 
+ - phpunit tagfield/tests/
