@@ -3,6 +3,13 @@ SilverStripe\TagField\Tests\Stub\TagFieldTestBlogTag:
     Title: Tag1
   Tag2:
     Title: 222
+  Tag3:
+    Title: 'My Parent Tag'
+  Tag4:
+    Parent: '=>SilverStripe\TagField\Tests\Stub\TagFieldTestBlogTag.Tag3'
+    Title: 'My Tag'
+  Tag5:
+    Title: 'My Tag'
 SilverStripe\TagField\Tests\Stub\TagFieldTestBlogPost:
   BlogPost1:
     Title: BlogPost1

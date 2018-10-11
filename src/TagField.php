@@ -367,18 +367,25 @@ class TagField extends MultiSelectField
     /**
      * Get or create tag with the given value
      *
-     * @param  string $term
+     * @param  string|array $term
      * @return DataObject
      */
-    protected function getOrCreateTag($term)
+    public function getOrCreateTag($term)
     {
         // Check if existing record can be found
         /** @var DataList $source */
         $source = $this->getSourceList();
         $titleField = $this->getTitleField();
-        $record = $source
-            ->filter($titleField, $term)
-            ->first();
+
+        // check if we linked to an existing ID / Title pair.
+        if (is_array($term) && isset($term['Value'])) {
+            $record = $source->byId($term['Value']);
+        } else {
+            $record = $source
+                ->filter($titleField, $term)
+                ->first();
+        }
+
         if ($record) {
             return $record;
         }
@@ -389,7 +396,7 @@ class TagField extends MultiSelectField
             $record = Injector::inst()->create($dataClass);
 
             if (is_array($term)) {
-                $term = $term['Value'];
+                $term = $term['Title'];
             }
 
             $record->{$titleField} = $term;

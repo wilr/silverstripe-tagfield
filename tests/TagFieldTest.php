@@ -145,10 +145,7 @@ class TagFieldTest extends SapphireTest
             array('Tag1', '222'),
             $record
         );
-        $this->compareTagLists(
-            array('Tag1', '222'),
-            TagFieldTestBlogTag::get()
-        );
+
         $this->assertContains($tag2ID, TagFieldTestBlogTag::get()->column('ID'));
 
         // Write new tags
@@ -163,11 +160,25 @@ class TagFieldTest extends SapphireTest
         );
 
         // Ensure that only one new dataobject was added and that tag2s id has not changed
-        $this->compareTagLists(
-            array('Tag1', '222', 'Tag3'),
-            TagFieldTestBlogTag::get()
-        );
         $this->assertContains($tag2ID, TagFieldTestBlogTag::get()->column('ID'));
+    }
+
+    public function testSaveDuplicateTagsWithDifferentParentsSaves()
+    {
+        $field = new TagField('Tags', '', new DataList(TagFieldTestBlogTag::class));
+        $parentId = $this->objFromFixture(TagFieldTestBlogTag::class, 'Tag5')->ID;
+        $childId = $this->objFromFixture(TagFieldTestBlogTag::class, 'Tag4')->ID;
+
+        $tag = $field->getOrCreateTag('My Tag');
+        $this->assertEquals($parentId, $tag->ID);
+
+        // provided an id to the child tag, that one should be linked.
+        $tag = $field->getOrCreateTag([
+            'Value' => $childId,
+            'Title' =>'My Tag'
+        ]);
+
+        $this->assertEquals($childId, $tag->ID);
     }
 
     public function testItSuggestsTags()
@@ -180,7 +191,7 @@ class TagFieldTest extends SapphireTest
         $request = $this->getNewRequest(array('term' => 'Tag'));
 
         $this->assertEquals(
-            '{"items":[{"id":"Tag1","text":"Tag1"}]}',
+            '{"items":[{"Title":"My Parent Tag","Value":3},{"Title":"My Tag","Value":5},{"Title":"Tag1","Value":1}]}',
             $field->suggest($request)->getBody()
         );
 
@@ -190,7 +201,7 @@ class TagFieldTest extends SapphireTest
         $request = $this->getNewRequest(array('term' => '222'));
 
         $this->assertEquals(
-            '{"items":[{"id":"222","text":"222"}]}',
+            '{"items":[{"Title":"222","Value":2}]}',
             $field->suggest($request)->getBody()
         );
 
@@ -200,7 +211,7 @@ class TagFieldTest extends SapphireTest
         $request = $this->getNewRequest(array('term' => 'TAG1'));
 
         $this->assertEquals(
-            '{"items":[{"id":"Tag1","text":"Tag1"}]}',
+            '{"items":[{"Title":"Tag1","Value":1}]}',
             $field->suggest($request)->getBody()
         );
 
@@ -229,7 +240,7 @@ class TagFieldTest extends SapphireTest
         $request = $this->getNewRequest(array('term' => 'Tag'));
 
         $this->assertEquals(
-            '{"items":[{"id":"Tag1","text":"Tag1"}]}',
+            '{"items":[{"Title":"My Parent Tag","Value":3},{"Title":"My Tag","Value":5},{"Title":"Tag1","Value":1}]}',
             $field->suggest($request)->getBody()
         );
 
@@ -239,7 +250,7 @@ class TagFieldTest extends SapphireTest
         $request = $this->getNewRequest(array('term' => 'Tag1'));
 
         $this->assertEquals(
-            '{"items":[{"id":"Tag1","text":"Tag1"}]}',
+            '{"items":[{"Title":"Tag1","Value":1}]}',
             $field->suggest($request)->getBody()
         );
 
@@ -288,7 +299,9 @@ class TagFieldTest extends SapphireTest
 
         $ids = TagFieldTestBlogTag::get()->column('Title');
 
-        $this->assertEquals($field->Value(), $ids);
+        $this->assertEquals(2, count($field->Value()), 'Tagged with two');
+        $this->assertArraySubset(['Title' => 'Tag1'], $field->Value());
+        $this->assertArraySubset(['Title' => '222'], $field->Value());
     }
 
     public function testItIgnoresNewTagsIfCannotCreate()
